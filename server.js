@@ -3,14 +3,16 @@ const fs = require('fs');
 const path = require('path');
 
 const server = http.createServer((req, res) => {
-    // Handle the root path and all other paths
-    let filePath = req.url === '/' ? './src/index.html' : './src' + req.url;
-    
-    // Get the file extension
+    // Map the request URL to a file path
+    let filePath = '.' + req.url;
+    if (filePath === './') {
+        filePath = './index.html';
+    }
+
     const extname = path.extname(filePath);
     let contentType = 'text/html';
-    
-    // Set the content type based on file extension
+
+    // Set content type based on file extension
     switch (extname) {
         case '.js':
             contentType = 'text/javascript';
@@ -21,19 +23,23 @@ const server = http.createServer((req, res) => {
         case '.png':
             contentType = 'image/png';
             break;
+        case '.jpg':
+        case '.jpeg':
+            contentType = 'image/jpeg';
+            break;
     }
-    
-    // Read the file
+
     fs.readFile(filePath, (error, content) => {
         if (error) {
             if (error.code === 'ENOENT') {
-                // If the file is not found, serve index.html
-                fs.readFile('./src/index.html', (error, content) => {
+                // If a file is not found, it's a client-side route.
+                // Serve the main index.html to let the router handle it.
+                fs.readFile('./index.html', (indexError, indexContent) => {
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end(content, 'utf-8');
+                    res.end(indexContent, 'utf-8');
                 });
             } else {
-                // Server error
+                // Other server error
                 res.writeHead(500);
                 res.end(`Server Error: ${error.code}`);
             }
